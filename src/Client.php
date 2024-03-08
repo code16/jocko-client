@@ -21,27 +21,27 @@ class Client
     public function getCollection(string $collectionKey): array
     {
         return $this->withCache($collectionKey, fn () =>
-            $this->http()
-                ->get($this->url("/collections/$collectionKey"))
-                ->json()
+        $this->http()
+            ->get($this->url("/collections/$collectionKey"))
+            ->json()
         )['data'];
     }
 
     public function getCollectionMeta(string $collectionKey): array
     {
         return $this->withCache($collectionKey, fn () =>
-            $this->http()
-                ->get($this->url("/collections/$collectionKey"))
-                ->json()
+        $this->http()
+            ->get($this->url("/collections/$collectionKey"))
+            ->json()
         )['meta'];
     }
 
     public function getSettings(): array
     {
         return $this->withCache('settings', fn () =>
-            $this->http()
-                ->get($this->url('/settings'))
-                ->json('data')
+        $this->http()
+            ->get($this->url('/settings'))
+            ->json('data')
         );
     }
 

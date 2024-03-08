@@ -2,41 +2,63 @@
 
 namespace Code16\JockoClient\Eloquent;
 
-use Code16\JockoClient\Eloquent\Concerns\CastsCollection;
+use Code16\JockoClient\Eloquent\Casts\JockoCustomAttribute;
 use Code16\JockoClient\Eloquent\Concerns\HasCollectionGlobalScopes;
-use Code16\JockoClient\Eloquent\Concerns\ManagesSushiCache;
-use Code16\JockoClient\Eloquent\Concerns\ManagesSushiConnections;
-use Code16\JockoClient\Facades\Jocko;
+use Code16\JockoClient\Eloquent\Concerns\HasCollectionKey;
+use Code16\JockoClient\JockoCms\JockoCollectionFormConfig;
+use Code16\JockoClient\JockoCms\JockoCollectionListConfig;
+use Code16\JockoClient\JockoCms\JockoCollectionConfig;
 use Illuminate\Database\Eloquent\Model;
-use Sushi\Sushi;
-
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 abstract class JockoModel extends Model
 {
-    use Sushi {
-        Sushi::setSqliteConnection as sushiSetSqliteConnection;
-    }
-//    use ManagesSushiCache {
-//        ManagesSushiCache::sushiCacheDirectory insteadof Sushi;
-//        ManagesSushiCache::sushiShouldCache insteadof Sushi;
-//    }
-    use ManagesSushiConnections {
-        ManagesSushiConnections::resolveConnection insteadof Sushi;
-        ManagesSushiConnections::setSqliteConnection insteadof Sushi;
-    }
-    use CastsCollection;
+    use HasCollectionKey;
     use HasCollectionGlobalScopes;
 
+    protected $guarded = [];
 
-    public function getRows(): array
+    protected $table = 'posts';
+
+    protected $casts = [
+        'custom_properties' => 'array',
+    ];
+
+    protected array $jockoCustomAttributes = [];
+
+    public function getMorphClass()
     {
-        return $this->castCollection(Jocko::getCollection($this->jockoCollectionKey()));
+        if (app()->environment('production')) {
+            return 'post';
+        }
+
+        return parent::getMorphClass();
     }
 
-    public function jockoCollectionKey(): string
+    public function getCasts()
     {
-        return str(class_basename(get_class($this)))
-            ->snake()
-            ->plural();
+        return array_merge(
+            parent::getCasts(),
+            collect($this->jockoCustomAttributes)
+                ->mapWithKeys(fn($attribute) => [$attribute => JockoCustomAttribute::class])
+                ->toArray()
+        );
     }
+
+    public function hasCustomAttribute(string $key): bool
+    {
+        return in_array($key, $this->jockoCustomAttributes);
+    }
+
+    public function cover(): MorphOne
+    {
+        return $this->morphOne(Media::class, 'model')
+            ->where('model_key', 'cover');
+    }
+
+    abstract public static function configureJockoCollection(JockoCollectionConfig $config): JockoCollectionConfig;
+
+    abstract public static function configureJockoCollectionList(JockoCollectionListConfig $config): JockoCollectionListConfig;
+
+    abstract public static function configureJockoCollectionForm(JockoCollectionFormConfig $config): JockoCollectionFormConfig;
 }
