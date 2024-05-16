@@ -1,8 +1,8 @@
 <?php
 
-namespace Code16\JockoClient\Deploy;
+namespace Code16\OzuClient\Deploy;
 
-use Code16\JockoClient\Deploy\Jobs\CrawlSiteHandler;
+use Code16\OzuClient\Deploy\Jobs\CrawlSiteHandler;
 use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Support\Facades\Artisan;
@@ -22,6 +22,8 @@ class DeployServiceProvider extends ServiceProvider
                 Artisan::call('cache:clear', [], $event->output);
             }
         });
+
+        config()->set('app.asset_url', '/');
 
         $this->app[Dispatcher::class]->map([
             \Spatie\Export\Jobs\CrawlSite::class => CrawlSiteHandler::class,
